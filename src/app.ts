@@ -13,12 +13,9 @@ app.use(requestLogger);
 app.use(cors());
 
 app.use(helmet());
-
 app.use(compression());
-
 app.use(express.json());
 app.use(responseLogger);
-
 app.use(cookieParser());
 
 app.get("/", (_, res) => {
