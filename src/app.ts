@@ -5,7 +5,7 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import { requestLogger, responseLogger } from "./utils/logger";
 import { requestIdMiddleware } from "./middleware/request_id_middleware";
-import { userRoutes } from "./routes";
+import { authRoutes, userRoutes } from "./routes";
 
 const app = express();
 
@@ -27,5 +27,6 @@ app.get("/", (_, res) => {
   });
 });
 app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 export default app;
