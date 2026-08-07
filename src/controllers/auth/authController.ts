@@ -3,25 +3,15 @@ import {
   generateRefreshToken,
 } from "../../services/jwtService";
 import { sendOTP, validateOTP } from "../../services/otpService";
-import { isValidPhone } from "../../utils/helperFunctions";
 import prisma from "../../utils/prisma";
 import { getUserByPhone } from "../users/userController";
 import jwt from "jsonwebtoken";
 
 export const initializeUserLogin = async (req: any, res: any) => {
   try {
-    // get the phone number from the request body
-    // Validate the phone number format
     const { phone } = req.body;
-
-    if (!isValidPhone(phone)) {
-      return res.status(400).json({
-        message: "Phone must contain only numbers and an optional leading +",
-      });
-    }
-
     const normalizedPhone = phone.trim();
-    // Check if the user exists in the database
+
     const existingUser = await getUserByPhone(req, res);
     const userId = existingUser?.id || "";
     await sendOTP(userId, normalizedPhone);
@@ -38,7 +28,9 @@ export const initializeUserLogin = async (req: any, res: any) => {
 export const verifyOTP = async (req: any, res: any) => {
   try {
     const { phone, otp } = req.body;
-    const result = await validateOTP(phone, otp);
+    const normalizedPhone = phone.trim();
+    const normalizedOtp = otp.trim();
+    const result = await validateOTP(normalizedPhone, normalizedOtp);
     if (!result.success) {
       return res.status(400).json(result);
     }
@@ -52,8 +44,8 @@ export const verifyOTP = async (req: any, res: any) => {
     const token = generateAuthToken(result.user);
     const refresh_token = generateRefreshToken(result.user);
 
-    res.send({
-      message: "Login successful",
+    return res.status(200).json({
+      message: "OTP verified successfully",
       user: {
         id: result.user.id,
         name: result.user?.full_name,
@@ -61,11 +53,6 @@ export const verifyOTP = async (req: any, res: any) => {
       },
       access_token: token,
       refresh_token: refresh_token,
-    });
-
-    return res.status(200).json({
-      message: "OTP verified successfully",
-      user: result.user,
     });
   } catch (error) {
     console.error("Error logging in user:", error);
@@ -76,12 +63,13 @@ export const verifyOTP = async (req: any, res: any) => {
 export const refreshToken = async (req: any, res: any) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
+    const old_token = authHeader?.split(" ")[1];
+
+    if (!old_token) {
       return res.status(401).json({
         message: "Unauthorized",
       });
     }
-    const old_token = authHeader.split(" ")[1];
     const decoded: any = jwt.verify(
       old_token,
       process.env.JWT_REFRESH_SECRET as string,

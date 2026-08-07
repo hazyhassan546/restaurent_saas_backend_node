@@ -28,5 +28,6 @@ app.get("/", (_, res) => {
     });
 });
 app.use("/api/v1/user", routes_1.userRoutes);
+app.use("/api/v1/auth", routes_1.authRoutes);
 exports.default = app;
 //# sourceMappingURL=app.js.map

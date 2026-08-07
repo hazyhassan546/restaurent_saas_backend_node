@@ -4,11 +4,13 @@ import {
   refreshToken,
   verifyOTP,
 } from "../controllers/auth/authController";
+import { validateRequest, validateAuthorizationHeader } from "../middleware/validateRequest";
+import { initLoginSchema, verifyOtpSchema } from "../validators/authValidators";
 
 const router = Router();
 
-router.post("/init-login", initializeUserLogin);
-router.post("/verify-otp", verifyOTP);
-router.post("/refresh-token", refreshToken);
+router.post("/init-login", validateRequest(initLoginSchema), initializeUserLogin);
+router.post("/verify-otp", validateRequest(verifyOtpSchema), verifyOTP);
+router.post("/refresh-token", validateAuthorizationHeader, refreshToken);
 
 export default router;
