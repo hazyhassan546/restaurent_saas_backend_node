@@ -7,14 +7,59 @@ exports.requestLogger = exports.logger = void 0;
 exports.responseLogger = responseLogger;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const stream_1 = require("stream");
 const pino_1 = __importDefault(require("pino"));
 const pino_http_1 = __importDefault(require("pino-http"));
 const logsDir = path_1.default.join(process.cwd(), "logs");
 if (!fs_1.default.existsSync(logsDir)) {
     fs_1.default.mkdirSync(logsDir, { recursive: true });
 }
-const logFile = path_1.default.join(logsDir, "app.log");
-const destination = pino_1.default.destination({ dest: logFile, sync: false });
+class DailyFileStream extends stream_1.Writable {
+    directory;
+    currentDate;
+    filePath;
+    fd = null;
+    constructor(directory) {
+        super();
+        this.directory = directory;
+        this.currentDate = this.getDateKey();
+        this.filePath = path_1.default.join(directory, `app-${this.currentDate}.log`);
+        this.fd = fs_1.default.openSync(this.filePath, "a");
+    }
+    getDateKey(date = new Date()) {
+        return date.toISOString().slice(0, 10);
+    }
+    rotateIfNeeded() {
+        const today = this.getDateKey();
+        if (today === this.currentDate) {
+            return;
+        }
+        if (this.fd !== null) {
+            fs_1.default.closeSync(this.fd);
+        }
+        this.currentDate = today;
+        this.filePath = path_1.default.join(this.directory, `app-${this.currentDate}.log`);
+        this.fd = fs_1.default.openSync(this.filePath, "a");
+    }
+    _write(chunk, _encoding, callback) {
+        this.rotateIfNeeded();
+        if (this.fd === null) {
+            callback(new Error("Log file handle is not available"));
+            return;
+        }
+        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, _encoding);
+        fs_1.default.writeSync(this.fd, buffer);
+        callback();
+    }
+    _final(callback) {
+        if (this.fd !== null) {
+            fs_1.default.closeSync(this.fd);
+            this.fd = null;
+        }
+        callback();
+    }
+}
+const destination = new DailyFileStream(logsDir);
 exports.logger = (0, pino_1.default)({
     level: process.env.LOG_LEVEL || "info",
     timestamp: pino_1.default.stdTimeFunctions.isoTime,

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { Writable } from "stream";
 import type { NextFunction, Request, Response } from "express";
 import pino from "pino";
 import pinoHttp from "pino-http";
@@ -9,8 +10,60 @@ if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir, { recursive: true });
 }
 
-const logFile = path.join(logsDir, "app.log");
-const destination = pino.destination({ dest: logFile, sync: false });
+class DailyFileStream extends Writable {
+    private currentDate: string;
+    private filePath: string;
+    private fd: number | null = null;
+
+    constructor(private readonly directory: string) {
+        super();
+        this.currentDate = this.getDateKey();
+        this.filePath = path.join(directory, `app-${this.currentDate}.log`);
+        this.fd = fs.openSync(this.filePath, "a");
+    }
+
+    private getDateKey(date = new Date()): string {
+        return date.toISOString().slice(0, 10);
+    }
+
+    private rotateIfNeeded(): void {
+        const today = this.getDateKey();
+        if (today === this.currentDate) {
+            return;
+        }
+
+        if (this.fd !== null) {
+            fs.closeSync(this.fd);
+        }
+
+        this.currentDate = today;
+        this.filePath = path.join(this.directory, `app-${this.currentDate}.log`);
+        this.fd = fs.openSync(this.filePath, "a");
+    }
+
+    _write(chunk: Buffer | string, _encoding: BufferEncoding, callback: (error?: Error | null) => void): void {
+        this.rotateIfNeeded();
+
+        if (this.fd === null) {
+            callback(new Error("Log file handle is not available"));
+            return;
+        }
+
+        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, _encoding);
+        fs.writeSync(this.fd, buffer);
+        callback();
+    }
+
+    _final(callback: (error?: Error | null) => void): void {
+        if (this.fd !== null) {
+            fs.closeSync(this.fd);
+            this.fd = null;
+        }
+        callback();
+    }
+}
+
+const destination = new DailyFileStream(logsDir);
 
 export const logger = pino(
     {
