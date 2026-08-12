@@ -5,7 +5,12 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import { requestLogger, responseLogger } from "./utils/logger";
 import { requestIdMiddleware } from "./middleware/request_id_middleware";
-import { authRoutes, productRoutes, userRoutes } from "./routes";
+import {
+  authRoutes,
+  productRoutes,
+  userRoutes,
+  categoryRoutes,
+} from "./routes";
 
 const app = express();
 
@@ -29,5 +34,6 @@ app.get("/", (_, res) => {
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/products", productRoutes);
+app.use("/api/v1/categories", categoryRoutes);
 
 export default app;
