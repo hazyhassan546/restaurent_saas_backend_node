@@ -1,10 +1,26 @@
 import { Router } from "express";
-import { CreateUser } from "../controllers/users/userController";
-import { validateRequest } from "../middleware/validateRequest";
-import { registerUserSchema } from "../validators/userValidators";
+import {
+  getUserById,
+  updateUserProfile,
+} from "../controllers/users/userController";
+import {
+  validateAuthorizationHeader,
+  validateRequest,
+} from "../middleware/validateRequest";
+import {
+  registerUserSchema,
+  updateProfileSchema,
+} from "../validators/userValidators";
 
 const router = Router();
 
-router.post("/register", validateRequest(registerUserSchema), CreateUser);
+router.get("/profile", validateAuthorizationHeader, getUserById);
+
+router.patch(
+  "/profile",
+  validateAuthorizationHeader,
+  validateRequest(updateProfileSchema, "body"),
+  updateUserProfile,
+);
 
 export default router;
