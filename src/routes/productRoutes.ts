@@ -4,6 +4,7 @@ import {
   getProductById,
   createProduct,
   updateProduct,
+  deleteProduct,
 } from "../controllers/products/productController";
 import {
   validateAuthorizationHeader,
@@ -32,6 +33,12 @@ router.patch(
   validateAuthorizationHeader,
   validateRequest(updateProductSchema, "body"),
   updateProduct,
+);
+
+router.delete(
+  "/:productId",
+  validateAuthorizationHeader,
+  deleteProduct,
 );
 
 export default router;

@@ -122,9 +122,13 @@ export const createProduct = async (req: Request, res: Response) => {
         sku: sku || null,
         barcode: barcode || null,
         price: parseFloat(price.toString()),
-        compare_at_price: compare_at_price ? parseFloat(compare_at_price.toString()) : null,
+        compare_at_price: compare_at_price
+          ? parseFloat(compare_at_price.toString())
+          : null,
         cost_price: cost_price ? parseFloat(cost_price.toString()) : null,
-        tax_percentage: tax_percentage ? parseFloat(tax_percentage.toString()) : 0,
+        tax_percentage: tax_percentage
+          ? parseFloat(tax_percentage.toString())
+          : 0,
         stock_quantity: stock_quantity || 0,
         track_inventory: track_inventory || false,
         is_available: is_available !== undefined ? is_available : true,
@@ -148,9 +152,9 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
   try {
-        const  productId  = "asd";
-
-    // const { productId } = req.params;
+    const productId = Array.isArray(req.params.productId)
+      ? req.params.productId[0]
+      : req.params.productId;
 
     if (!productId) {
       return res.status(400).json({ message: "Product ID is required" });
@@ -201,11 +205,20 @@ export const updateProduct = async (req: Request, res: Response) => {
     if (sku !== undefined) updateData.sku = sku || null;
     if (barcode !== undefined) updateData.barcode = barcode || null;
     if (price !== undefined) updateData.price = parseFloat(price.toString());
-    if (compare_at_price !== undefined) updateData.compare_at_price = compare_at_price ? parseFloat(compare_at_price.toString()) : null;
-    if (cost_price !== undefined) updateData.cost_price = cost_price ? parseFloat(cost_price.toString()) : null;
-    if (tax_percentage !== undefined) updateData.tax_percentage = parseFloat(tax_percentage.toString());
-    if (stock_quantity !== undefined) updateData.stock_quantity = stock_quantity;
-    if (track_inventory !== undefined) updateData.track_inventory = track_inventory;
+    if (compare_at_price !== undefined)
+      updateData.compare_at_price = compare_at_price
+        ? parseFloat(compare_at_price.toString())
+        : null;
+    if (cost_price !== undefined)
+      updateData.cost_price = cost_price
+        ? parseFloat(cost_price.toString())
+        : null;
+    if (tax_percentage !== undefined)
+      updateData.tax_percentage = parseFloat(tax_percentage.toString());
+    if (stock_quantity !== undefined)
+      updateData.stock_quantity = stock_quantity;
+    if (track_inventory !== undefined)
+      updateData.track_inventory = track_inventory;
     if (is_available !== undefined) updateData.is_available = is_available;
     if (is_featured !== undefined) updateData.is_featured = is_featured;
     if (sort_order !== undefined) updateData.sort_order = sort_order;
@@ -228,3 +241,37 @@ export const updateProduct = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const deleteProduct = async (req: Request, res: Response) => {
+  try {
+    const productId = Array.isArray(req.params.productId)
+      ? req.params.productId[0]
+      : req.params.productId;
+
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+
+    const product = await prisma.products.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    await prisma.products.delete({
+      where: { id: productId },
+    });
+
+    return res.status(200).json({
+      message: "Product deleted successfully",
+      data: product,
+    });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
