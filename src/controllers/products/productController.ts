@@ -148,7 +148,9 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
   try {
-    const { productId } = req.params;
+        const  productId  = "asd";
+
+    // const { productId } = req.params;
 
     if (!productId) {
       return res.status(400).json({ message: "Product ID is required" });

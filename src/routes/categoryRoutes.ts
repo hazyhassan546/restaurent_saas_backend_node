@@ -1,7 +1,6 @@
 import { Router } from "express";
 import {
   getAllCategories,
-  getCategoryById,
   createCategory,
   updateCategory,
   deleteCategory,
@@ -25,8 +24,6 @@ router.post(
   validateRequest(createCategorySchema, "body"),
   createCategory,
 );
-
-router.get("/:categoryId", getCategoryById);
 
 router.patch(
   "/:categoryId",

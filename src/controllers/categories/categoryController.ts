@@ -6,7 +6,9 @@ export const getAllCategories = async (req: Request, res: Response) => {
     const { is_active, skip = 0, take = 20 } = req.query;
 
     // Build filter object
-    const where: any = {};
+    const where: any = {
+      parent_category_id: null, // Only fetch top-level categories
+    };
 
     if (is_active === "true") {
       where.is_active = true;
@@ -19,7 +21,7 @@ export const getAllCategories = async (req: Request, res: Response) => {
     const categories = await prisma.categories.findMany({
       where,
       include: {
-        categories: true,
+        // categories: true,
         other_categories: true,
       },
       orderBy: {
@@ -40,37 +42,6 @@ export const getAllCategories = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching categories:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const getCategoryById = async (req: Request, res: Response) => {
-  try {
-    const { categoryId } = req.params;
-
-    if (!categoryId) {
-      return res.status(400).json({ message: "Category ID is required" });
-    }
-
-    const category = await prisma.categories.findUnique({
-      where: { id: categoryId },
-      include: {
-        categories: true,
-        other_categories: true,
-        products: true,
-      },
-    });
-
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
-    }
-
-    return res.status(200).json({
-      message: "Category fetched successfully",
-      data: category,
-    });
-  } catch (error) {
-    console.error("Error fetching category:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -140,7 +111,9 @@ export const createCategory = async (req: Request, res: Response) => {
 
 export const updateCategory = async (req: Request, res: Response) => {
   try {
-    const { categoryId } = req.params;
+    const categoryId = Array.isArray(req.params.categoryId)
+      ? req.params.categoryId[0]
+      : req.params.categoryId;
 
     if (!categoryId) {
       return res.status(400).json({ message: "Category ID is required" });
@@ -169,7 +142,9 @@ export const updateCategory = async (req: Request, res: Response) => {
     // Verify parent category exists if provided
     if (parent_category_id) {
       if (parent_category_id === categoryId) {
-        return res.status(400).json({ message: "Category cannot be its own parent" });
+        return res
+          .status(400)
+          .json({ message: "Category cannot be its own parent" });
       }
 
       const parentCategory = await prisma.categories.findUnique({
@@ -199,7 +174,8 @@ export const updateCategory = async (req: Request, res: Response) => {
     if (image_url !== undefined) updateData.image_url = image_url || null;
     if (icon_url !== undefined) updateData.icon_url = icon_url || null;
     if (slug !== undefined) updateData.slug = slug || null;
-    if (parent_category_id !== undefined) updateData.parent_category_id = parent_category_id || null;
+    if (parent_category_id !== undefined)
+      updateData.parent_category_id = parent_category_id || null;
     if (display_order !== undefined) updateData.display_order = display_order;
     if (is_active !== undefined) updateData.is_active = is_active;
 
@@ -225,7 +201,9 @@ export const updateCategory = async (req: Request, res: Response) => {
 
 export const deleteCategory = async (req: Request, res: Response) => {
   try {
-    const { categoryId } = req.params;
+    const categoryId = Array.isArray(req.params.categoryId)
+      ? req.params.categoryId[0]
+      : req.params.categoryId;
 
     if (!categoryId) {
       return res.status(400).json({ message: "Category ID is required" });
