@@ -31,5 +31,6 @@ app.use("/api/v1/user", routes_1.userRoutes);
 app.use("/api/v1/auth", routes_1.authRoutes);
 app.use("/api/v1/products", routes_1.productRoutes);
 app.use("/api/v1/categories", routes_1.categoryRoutes);
+app.use("/api/v1/images", routes_1.imageRoutes);
 exports.default = app;
 //# sourceMappingURL=app.js.map

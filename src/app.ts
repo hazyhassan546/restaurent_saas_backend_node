@@ -10,6 +10,7 @@ import {
   productRoutes,
   userRoutes,
   categoryRoutes,
+  imageRoutes,
 } from "./routes";
 
 const app = express();
@@ -35,5 +36,6 @@ app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/categories", categoryRoutes);
+app.use("/api/v1/images", imageRoutes);
 
 export default app;
