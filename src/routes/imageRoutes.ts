@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { uploadImageFile } from "../config/multer";
 import { uploadImage } from "../controllers/images/imageController";
 import {
   validateAuthorizationHeader,
@@ -11,6 +12,7 @@ const router = Router();
 router.post(
   "/upload",
   validateAuthorizationHeader,
+  uploadImageFile.single("image"),
   validateRequest(createImageSchema, "body"),
   uploadImage,
 );

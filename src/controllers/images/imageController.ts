@@ -1,3 +1,4 @@
+import fs from "fs";
 import type { Request, Response } from "express";
 import prisma from "../../utils/prisma";
 
@@ -26,6 +27,8 @@ const ensureEntityExists = async (entityType: EntityType, entityId: string) => {
 };
 
 export const uploadImage = async (req: Request, res: Response) => {
+  const uploadedFile = req.file as Express.Multer.File | undefined;
+
   try {
     const {
       entity_type,
@@ -48,9 +51,21 @@ export const uploadImage = async (req: Request, res: Response) => {
       });
     }
 
-    if (!entity_id || !image_url) {
+    if (!entity_id) {
       return res.status(400).json({
-        message: "entity_id and image_url are required",
+        message: "entity_id is required",
+      });
+    }
+
+    const resolvedImageUrl = uploadedFile
+      ? `/uploads/images/${uploadedFile.filename}`
+      : typeof image_url === "string"
+        ? image_url.trim()
+        : "";
+
+    if (!resolvedImageUrl) {
+      return res.status(400).json({
+        message: "Please upload an image file or provide image_url",
       });
     }
 
@@ -66,7 +81,7 @@ export const uploadImage = async (req: Request, res: Response) => {
       data: {
         entity_type: normalizedType,
         entity_id,
-        image_url,
+        image_url: resolvedImageUrl,
         image_type: image_type || "IMAGE",
         alt_text: alt_text || null,
         display_order: display_order ?? 0,
@@ -77,8 +92,18 @@ export const uploadImage = async (req: Request, res: Response) => {
     return res.status(201).json({
       message: "Image uploaded successfully",
       data: image,
+      image_url: resolvedImageUrl,
     });
   } catch (error) {
+    if (uploadedFile) {
+      const filePath = `/Users/hassan/Documents/Hassan/Research/restaurent/uploads/images/${uploadedFile.filename}`;
+      try {
+        fs.unlinkSync(filePath);
+      } catch (_cleanupError) {
+        console.error("Failed to delete uploaded file after error:", _cleanupError);
+      }
+    }
+
     console.error("Error uploading image:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
