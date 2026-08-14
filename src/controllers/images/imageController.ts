@@ -2,7 +2,13 @@ import fs from "fs";
 import type { Request, Response } from "express";
 import prisma from "../../utils/prisma";
 
-const ENTITY_TYPES = ["USER", "PRODUCT", "CATEGORY", "BANNER", "STORE"] as const;
+const ENTITY_TYPES = [
+  "USER",
+  "PRODUCT",
+  "CATEGORY",
+  "BANNER",
+  "STORE",
+] as const;
 
 type EntityType = (typeof ENTITY_TYPES)[number];
 
@@ -40,9 +46,10 @@ export const uploadImage = async (req: Request, res: Response) => {
       is_primary,
     } = req.body;
 
-    const normalizedType = typeof entity_type === "string"
-      ? entity_type.trim().toUpperCase()
-      : undefined;
+    const normalizedType =
+      typeof entity_type === "string"
+        ? entity_type.trim().toUpperCase()
+        : undefined;
 
     if (!normalizedType || !isValidEntityType(normalizedType)) {
       return res.status(400).json({
@@ -77,17 +84,29 @@ export const uploadImage = async (req: Request, res: Response) => {
       });
     }
 
-    const image = await prisma.images.create({
-      data: {
-        entity_type: normalizedType,
-        entity_id,
-        image_url: resolvedImageUrl,
-        image_type: image_type || "IMAGE",
-        alt_text: alt_text || null,
-        display_order: display_order ?? 0,
-        is_primary: is_primary ?? false,
-      },
-    });
+    const image =
+      normalizedType === "PRODUCT"
+        ? await prisma.product_images.create({
+            data: {
+              product_id: entity_id,
+              image_url: resolvedImageUrl,
+              image_type: image_type || "IMAGE",
+              alt_text: alt_text || null,
+              display_order: display_order ?? 0,
+              is_primary: is_primary ?? false,
+            },
+          })
+        : await prisma.images.create({
+            data: {
+              entity_type: normalizedType,
+              entity_id,
+              image_url: resolvedImageUrl,
+              image_type: image_type || "IMAGE",
+              alt_text: alt_text || null,
+              display_order: display_order ?? 0,
+              is_primary: is_primary ?? false,
+            },
+          });
 
     return res.status(201).json({
       message: "Image uploaded successfully",
@@ -100,7 +119,10 @@ export const uploadImage = async (req: Request, res: Response) => {
       try {
         fs.unlinkSync(filePath);
       } catch (_cleanupError) {
-        console.error("Failed to delete uploaded file after error:", _cleanupError);
+        console.error(
+          "Failed to delete uploaded file after error:",
+          _cleanupError,
+        );
       }
     }
 

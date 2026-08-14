@@ -28,6 +28,11 @@ export const getAllProducts = async (req: Request, res: Response) => {
       where,
       include: {
         categories: true,
+        product_images: {
+          orderBy: {
+            display_order: "asc",
+          },
+        },
       },
       orderBy: {
         sort_order: "asc",
